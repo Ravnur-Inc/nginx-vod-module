@@ -62,6 +62,7 @@
 	"        segmentAlignment=\"true\"\n"										\
 	"        maxWidth=\"%uD\"\n"												\
 	"        maxHeight=\"%uD\"\n"												\
+	"        contentType=\"video\"\n"											\
 	"        maxFrameRate=\"%V\">\n"
 
 #define VOD_DASH_MANIFEST_REPRESENTATION_HEADER_VIDEO							\
@@ -79,6 +80,7 @@
 #define VOD_DASH_MANIFEST_ADAPTATION_HEADER_AUDIO								\
 	"    <AdaptationSet\n"														\
 	"        id=\"%uD\"\n"														\
+	"        contentType=\"audio\"\n"											\
 	"        segmentAlignment=\"true\">\n"
 
 #define VOD_DASH_MANIFEST_ADAPTATION_HEADER_AUDIO_LANG							\
@@ -86,6 +88,7 @@
 	"        id=\"%uD\"\n"														\
 	"        lang=\"%V\"\n"														\
 	"        label=\"%V\"\n"													\
+	"        contentType=\"audio\"\n"											\
 	"        segmentAlignment=\"true\">\n"
 
 // TODO: value should be the number of channels ?
@@ -159,6 +162,23 @@
 	"            timescale=\"1000\"\n"											\
 	"            media=\"%V%V-$Number$-$RepresentationID$.%V\"\n"				\
 	"            initialization=\"%V%V-%s$RepresentationID$.%V\"\n"				\
+	"            startNumber=\"%uD\">\n"										\
+	"            <SegmentTimeline>\n"
+
+#define VOD_DASH_MANIFEST_SEGMENT_TEMPLATE_FIXED_AMS							\
+	"        <SegmentTemplate\n"												\
+	"            timescale=\"1000\"\n"											\
+	"            media=\"%V%V-$Time$-%s$Bandwidth$.%V\"\n"						\
+	"            initialization=\"%V%V-%s$Bandwidth$.%V\"\n"					\
+	"            duration=\"%ui\"\n"											\
+	"            startNumber=\"%uD\">\n"										\
+	"        </SegmentTemplate>\n"
+
+#define VOD_DASH_MANIFEST_SEGMENT_TEMPLATE_HEADER_AMS							\
+	"        <SegmentTemplate\n"												\
+	"            timescale=\"1000\"\n"											\
+	"            media=\"%V%V-$Time$-$Bandwidth$.%V\"\n"						\
+	"            initialization=\"%V%V-%s$Bandwidth$.%V\"\n"					\
 	"            startNumber=\"%uD\">\n"										\
 	"            <SegmentTimeline>\n"
 
@@ -440,7 +460,7 @@ dash_packager_write_segment_template(
 	// Note: SegmentTemplate is currently printed in the adaptation set level, so it is not possible
 	//		to mix mp4 and webm representations for the same media type
 	p = vod_sprintf(p,
-		VOD_DASH_MANIFEST_SEGMENT_TEMPLATE_FIXED,
+		VOD_DASH_MANIFEST_SEGMENT_TEMPLATE_FIXED_AMS,
 		base_url,
 		&conf->fragment_file_name_prefix,
 		index_shift_str,
@@ -485,7 +505,7 @@ dash_packager_write_segment_timeline(
 	// Note: SegmentTemplate is currently printed in the adaptation set level, so it is not possible
 	//		to mix mp4 and webm representations for the same media type
 	p = vod_sprintf(p,
-		VOD_DASH_MANIFEST_SEGMENT_TEMPLATE_HEADER,
+		VOD_DASH_MANIFEST_SEGMENT_TEMPLATE_HEADER_AMS,
 		base_url,
 		&conf->fragment_file_name_prefix,
 		&dash_codecs[reference_track->media_info.codec_id].frag_file_ext,
@@ -1460,7 +1480,7 @@ dash_packager_build_mpd(
 		}
 
 		result_size +=
-			(sizeof(VOD_DASH_MANIFEST_SEGMENT_TEMPLATE_FIXED) - 1 + VOD_INT32_LEN + VOD_INT64_LEN +
+			(sizeof(VOD_DASH_MANIFEST_SEGMENT_TEMPLATE_FIXED_AMS) - 1 + VOD_INT32_LEN + VOD_INT64_LEN +
 				MAX_INDEX_SHIFT_LENGTH + urls_length) * adaptation_count * period_count;
 		break;
 
@@ -1485,7 +1505,7 @@ dash_packager_build_mpd(
 			}
 
 			result_size +=
-				((sizeof(VOD_DASH_MANIFEST_SEGMENT_TEMPLATE_HEADER) - 1 + VOD_INT32_LEN + urls_length +
+				((sizeof(VOD_DASH_MANIFEST_SEGMENT_TEMPLATE_HEADER_AMS) - 1 + VOD_INT32_LEN + urls_length +
 				sizeof(VOD_DASH_MANIFEST_SEGMENT_TEMPLATE_FOOTER) - 1 +
 				sizeof(VOD_DASH_MANIFEST_SEGMENT_REPEAT_TIME) - 1 + VOD_INT64_LEN) * period_count +
 				(sizeof(VOD_DASH_MANIFEST_SEGMENT_REPEAT) - 1 + 2 * VOD_INT32_LEN) * context.segment_durations[media_type].item_count) *
