@@ -1055,7 +1055,6 @@ m3u8_builder_write_video_range(u_char* p, media_info_t* media_info)
 		break;
 
 	case 16:
-	case 18:
 		p = vod_copy(p, M3U8_VIDEO_RANGE_PQ, sizeof(M3U8_VIDEO_RANGE_PQ) - 1);
 		break;
 	}
