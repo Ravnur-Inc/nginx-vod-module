@@ -456,8 +456,10 @@ ngx_http_vod_set_sequence_id_var(ngx_http_request_t *r, ngx_http_variable_value_
 static ngx_int_t
 ngx_http_vod_set_clip_id_var(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
 {
+	media_clip_source_t* clip_source;
 	ngx_http_vod_ctx_t *ctx;
 	media_clip_t* cur_clip;
+	media_set_t* media_set;
 	ngx_str_t* value;
 
 	ctx = ngx_http_get_module_ctx(r, ngx_http_vod_module);
@@ -469,13 +471,29 @@ ngx_http_vod_set_clip_id_var(ngx_http_request_t *r, ngx_http_variable_value_t *v
 	cur_clip = ctx->cur_clip;
 	if (cur_clip == NULL)
 	{
-		goto not_found;
+		media_set = &ctx->submodule_context.media_set;
+		if (media_set->sequence_count == 1 && media_set->clip_count == 1)
+		{
+			cur_clip = media_set->sequences->clips[0];
+		}
+		else
+		{
+			goto not_found;
+		}
 	}
 
 	switch (cur_clip->type)
 	{
 	case MEDIA_CLIP_SOURCE:
-		value = &((media_clip_source_t*)cur_clip)->mapped_uri;
+		clip_source = (media_clip_source_t*)cur_clip;
+		if (clip_source->id.len != 0)
+		{
+			value = &clip_source->id;
+		}
+		else
+		{
+			value = &clip_source->mapped_uri;
+		}
 		break;
 
 	case MEDIA_CLIP_DYNAMIC:
@@ -3559,7 +3577,7 @@ ngx_http_vod_run_generators(ngx_http_vod_ctx_t *ctx)
 		}
 
 		if (parse_params.langs_mask != NULL &&
-			!vod_is_bit_set(parse_params.langs_mask, cur_source->sequence->language))
+			!vod_is_bit_set(parse_params.langs_mask, cur_source->sequence->tags.language))
 		{
 			ngx_memzero(&cur_source->track_array, sizeof(cur_source->track_array));
 			continue;
@@ -5318,9 +5336,7 @@ ngx_http_vod_map_media_set_apply(ngx_http_vod_ctx_t *ctx, ngx_str_t* mapping, in
 			ctx->submodule_context.media_set.segmenter_conf = mapped_media_set.segmenter_conf;
 			sequence = cur_source->sequence;
 			sequence->mapped_uri = mapped_source->mapped_uri;
-			sequence->lang_str = mapped_media_set.sequences->lang_str;
-			sequence->language = mapped_media_set.sequences->language;
-			sequence->label = mapped_media_set.sequences->label;
+			sequence->tags = mapped_media_set.sequences->tags;
 			sequence->id = mapped_media_set.sequences->id;
 			ngx_memcpy(sequence->bitrate, mapped_media_set.sequences->bitrate, sizeof(sequence->bitrate));
 			ngx_memcpy(sequence->avg_bitrate, mapped_media_set.sequences->avg_bitrate, sizeof(sequence->avg_bitrate));
