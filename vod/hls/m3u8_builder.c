@@ -954,8 +954,7 @@ m3u8_builder_ext_x_media_tags_write(
 	adaptation_set_t* adaptation_set;
 	media_track_t* tracks[MEDIA_TYPE_COUNT];
 	vod_str_t* label;
-	uint32_t group_index;
-	bool_t is_default;
+	uint32_t group_index;	
 	char* group_id;
 	char* type;
 
@@ -1013,14 +1012,8 @@ m3u8_builder_ext_x_media_tags_write(
 			p = vod_sprintf(p, M3U8_EXT_MEDIA_LANG,
 				&tracks[media_type]->media_info.tags.lang_str);
 		}
-
-		is_default = tracks[media_type]->media_info.tags.is_default;
-		if (is_default < 0)
-		{
-			is_default = adaptation_set == first_adaptation_set;
-		}
-
-		if (is_default)
+		
+		if (adaptation_set == first_adaptation_set)
 		{
 			p = vod_copy(p, M3U8_EXT_MEDIA_DEFAULT, sizeof(M3U8_EXT_MEDIA_DEFAULT) - 1);
 		}
